@@ -4,7 +4,24 @@
     <body>
         <%- include('../includes/nav.ejs') %>
         <main>
-            <h1> This is my order page</h1>
+            <% if(orders.length > 0 ) { %>
+                <ul>
+                    <% for(const order of orders) { %>
+                        <li>
+                            <h1># <%= order.id %> </h1>
+                            <ul>
+                                <% for(const product of order.products) { %>
+                                    <li>
+                                        <%= product.title %> (<%= product.orderItem.qty %>)
+                                    </li>
+                                <% } %>
+                            </ul>
+                        </li>
+                    <% } %>
+                </ul>
+            <% } else { %>
+                <h1> You dont have any orders </h1>
+            <% } %>
         </main>
     </body>
 

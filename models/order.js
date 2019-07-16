@@ -3,15 +3,15 @@ const Sequelize = require('sequelize');
 
 const sequelize = require('../utils/database');
 
-class Cart extends Sequelize.Model {}
+class Order extends Sequelize.Model {}
 
-Cart.init({
+Order.init({
     id: {
         type: Sequelize.INTEGER,
         autoIncrement:true,
         allowNull: false,
         primaryKey: true
     }
-},{sequelize , modelName:'cart'});
+},{sequelize , modelName:'order'});
 
-module.exports = Cart;
+module.exports = Order;

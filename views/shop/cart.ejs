@@ -3,27 +3,32 @@
 
     <body>
         <%- include('../includes/nav.ejs') %>
-        <main>
-            <% if(products.length > 0)  { %>
-                <ul>
-                <% for(let product of products) { %>
-                    <li> 
-                        <p>
-                            <%= product.data.title %> (<%= product.qty %>)
-                        </p>
-                        <form action="/delete-from-cart" method="POST">
-                            <input type="hidden" name="id" value="<%= product.data.id %>">
-                            <input type="hidden" name="price" value="<%= product.data.price %>">
-                            <button type="submit" class="btn">Delete</button> 
-                        </form>
-                        
-                    </li>
-                <% } %>
-                </ul>
-            <% } else { %>
-                <h1>No Product</h1>
-            <% } %>
-        </main>
+            <main>
+                <% if(products.length > 0)  { %>
+                    <ul>
+                        <% for(let product of products) { %>
+                            <li>
+                                <p>
+                                    <%= product.title %> (
+                                        <%= product.cartItem.qty %>)
+                                </p>
+                                <form action="/delete-from-cart" method="POST">
+                                    <input type="hidden" name="id" value="<%= product.id %>">
+                                    <input type="hidden" name="price" value="<%= product.price %>">
+                                    <button type="submit" class="btn">Delete</button>
+                                </form>
+
+                            </li>
+                            <% } %>
+                    </ul>
+                    <form action="/checkout" method="POST" >
+                        <button type="submit" class="btn">Checkout</button>
+                    </form>
+
+                    <% } else { %>
+                        <h1>No Product</h1>
+                        <% } %>
+            </main>
     </body>
 
     </html>

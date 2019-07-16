@@ -3,15 +3,16 @@ const Sequelize = require('sequelize');
 
 const sequelize = require('../utils/database');
 
-class Cart extends Sequelize.Model {}
+class CartItem extends Sequelize.Model {}
 
-Cart.init({
+CartItem.init({
     id: {
         type: Sequelize.INTEGER,
         autoIncrement:true,
         allowNull: false,
         primaryKey: true
-    }
-},{sequelize , modelName:'cart'});
+    },
+    qty: Sequelize.STRING
+},{sequelize , modelName:'cartItem'});
 
-module.exports = Cart;
+module.exports = CartItem;
