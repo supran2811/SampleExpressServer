@@ -42,6 +42,7 @@ exports.deleteProduct = async (req, res) => {
     try {
         await Product.deleteById(id);
         res.redirect("/admin/products");
+        
     } catch (err) {
         pino.error(err);
     }
