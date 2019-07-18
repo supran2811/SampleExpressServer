@@ -19,6 +19,7 @@
     "express": "^4.17.1",
     "express-handlebars": "^3.1.0",
     "express-pino-logger": "^4.0.0",
+    "mongodb": "^3.2.7",
     "pg": "^7.11.0",
     "pg-hstore": "^2.3.3",
     "pino": "^5.12.6",
