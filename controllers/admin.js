@@ -11,30 +11,48 @@ exports.getAddProducts = (req, res, next) => {
 exports.postAddProduct = async (req, res, next) => {
     const { title, imageUrl, description, price } = req.body;
 
-    const product = new Product(title, price, imageUrl, description);
-    await product.save();
+    const product = new Product(title, price, imageUrl, description, null,req.user._id);
+    try {
+        await product.save();
+        res.redirect("/admin/products");
+    } catch (error) {
+        pino.error(error);
+    }
 }
 
-exports.getAllProducts = async (req, res) => { 
-    const products = await Product.fetchAll();
-    res.render("admin/products", { prods: products, pageTitle: "Admin Products", path: '/admin/products' });
+exports.getAllProducts = async (req, res) => {
+    try {
+        const products = await Product.fetchAll();
+        res.render("admin/products", { prods: products, pageTitle: "Admin Products", path: '/admin/products' });
+    } catch (error) {
+        pino.error(error);
+    }
 };
 
 exports.getUpdateProduct = async (req, res) => {
+
+
     const id = req.params.prodId;
     const { edit } = req.query;
- 
-    const product = await Product.findByid(id);
-    res.render("admin/edit-product", { product, path: "/admin/products", pageTitle: product.title, editing: edit });
+    try {
+        const product = await Product.findByid(id);
+        res.render("admin/edit-product", { product, path: "/admin/products", pageTitle: product.title, editing: edit });
+    } catch (error) {
+        pino.error(error);
+    }
 }
 
 exports.postUpdateProduct = async (req, res) => {
     const { title, imageUrl, description, price } = req.body;
     const id = req.params.prodId;
-    
-    const product = new Product(title,price, imageUrl, description );
-    await product.update(id);
-    res.redirect('/admin/products');
+
+    const product = new Product(title, price, imageUrl, description, id);
+    try {
+        await product.save();
+        res.redirect('/admin/products');
+    } catch (error) {
+        pino.error(error);
+    }
 }
 
 exports.deleteProduct = async (req, res) => {
@@ -42,7 +60,7 @@ exports.deleteProduct = async (req, res) => {
     try {
         await Product.deleteById(id);
         res.redirect("/admin/products");
-        
+
     } catch (err) {
         pino.error(err);
     }

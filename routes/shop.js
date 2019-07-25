@@ -9,14 +9,14 @@ router.get('/products' , shopController.getAllProducts);
 
 router.get('/products/:prodId' , shopController.getProductPage);
 
-// router.get('/cart' , shopController.getCartPage);
+router.get('/cart' , shopController.getCartPage);
 
-// router.post('/cart' , shopController.postCart);
+router.post('/cart' , shopController.postCart);
 
-// router.get('/order' , shopController.getOrderPage);
+router.get('/order' , shopController.getOrderPage);
 
-// router.post('/delete-from-cart', shopController.deleteFromCart);
+router.post('/delete-from-cart', shopController.deleteFromCart);
 
-// router.post('/checkout' , shopController.doCheckout);
+router.post('/checkout' , shopController.doCheckout);
 
 module.exports = router;
