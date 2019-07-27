@@ -12,7 +12,7 @@ router.get('/add-product' , adminController.getAddProducts);
 
 router.get('/products' , adminController.getAllProducts);
 
-/// This is for handling only post request
+// /// This is for handling only post request
 router.post('/add-product' , adminController.postAddProduct);
 
 router.get('/edit-product/:prodId' , adminController.getUpdateProduct);

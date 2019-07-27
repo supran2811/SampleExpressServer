@@ -11,7 +11,7 @@ exports.getAddProducts = (req, res, next) => {
 exports.postAddProduct = async (req, res, next) => {
     const { title, imageUrl, description, price } = req.body;
 
-    const product = new Product(title, price, imageUrl, description, null,req.user._id);
+    const product = new Product({title,imageUrl,price,description,userId: req.user});
     try {
         await product.save();
         res.redirect("/admin/products");
@@ -22,7 +22,7 @@ exports.postAddProduct = async (req, res, next) => {
 
 exports.getAllProducts = async (req, res) => {
     try {
-        const products = await Product.fetchAll();
+        const products = await Product.find();
         res.render("admin/products", { prods: products, pageTitle: "Admin Products", path: '/admin/products' });
     } catch (error) {
         pino.error(error);
@@ -35,7 +35,7 @@ exports.getUpdateProduct = async (req, res) => {
     const id = req.params.prodId;
     const { edit } = req.query;
     try {
-        const product = await Product.findByid(id);
+        const product = await Product.findById(id);
         res.render("admin/edit-product", { product, path: "/admin/products", pageTitle: product.title, editing: edit });
     } catch (error) {
         pino.error(error);
@@ -46,9 +46,13 @@ exports.postUpdateProduct = async (req, res) => {
     const { title, imageUrl, description, price } = req.body;
     const id = req.params.prodId;
 
-    const product = new Product(title, price, imageUrl, description, id);
     try {
-        await product.save();
+        const product = await Product.findById(id);
+        product.title = title;
+        product.imageUrl = imageUrl;
+        product.description = description;
+        product.price = price;
+        await product.save(); 
         res.redirect('/admin/products');
     } catch (error) {
         pino.error(error);
@@ -58,7 +62,7 @@ exports.postUpdateProduct = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
     const { id, price } = req.body;
     try {
-        await Product.deleteById(id);
+        await Product.findByIdAndDelete(id);
         res.redirect("/admin/products");
 
     } catch (err) {
