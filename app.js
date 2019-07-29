@@ -2,7 +2,9 @@ const path = require('path');
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const session = require("express-session");
 const mongoose = require('mongoose');
+const MongoDbStore = require("connect-mongodb-session")(session);
 
 const errorController = require('./controllers/error');
 const User = require('./models/user');
@@ -17,17 +19,33 @@ const shopRoutes = require('./routes/shop');
 const indexRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
 
+const MONGODB_URI = 'mongodb+srv://supran:1234@supran-cluster0-zzni5.mongodb.net/shop?retryWrites=true&w=majority'
+
+const store = new MongoDbStore({
+  uri: MONGODB_URI,
+  databaseName: 'shop',
+  collection: 'sessions'
+});
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+app.use(session({ secret: 'My secret key', resave: false, saveUninitialized: false, store }));
+
 app.use((req, res, next) => {
-  User.findById('5d3a56cf7766903d4857710b')
-    .then(user => {
-      req.user = user;
-      next();
-    })
-    .catch(err => console.log(err));
+  if (req.session.user) {
+    User.findById(req.session.user._id)
+      .then(user => {
+        req.user = user;
+        next();
+      })
+      .catch(err => console.log(err));
+  }
+  else {
+    next();
+  }
+
 });
 
 app.use('/admin', adminRoutes);
@@ -39,7 +57,7 @@ app.use(errorController.getInvalidPage);
 
 mongoose
   .connect(
-    'mongodb+srv://supran:1234@supran-cluster0-zzni5.mongodb.net/shop?retryWrites=true&w=majority'
+  MONGODB_URI
   )
   .then(result => {
     User.findOne().then(user => {
