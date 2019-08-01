@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const session = require("express-session");
 const mongoose = require('mongoose');
 const MongoDbStore = require("connect-mongodb-session")(session);
+const csrf = require('csurf');
+const flash = require('connect-flash');
 
 const errorController = require('./controllers/error');
 const User = require('./models/user');
@@ -32,6 +34,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 app.use(session({ secret: 'My secret key', resave: false, saveUninitialized: false, store }));
+app.use(csrf());
+app.use(flash());
 
 app.use((req, res, next) => {
   if (req.session.user) {
@@ -48,6 +52,12 @@ app.use((req, res, next) => {
 
 });
 
+app.use((req,res,next) => {
+  res.locals.isLoggedIn = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
+})
+
 app.use('/admin', adminRoutes);
 app.use(indexRoutes);
 app.use(shopRoutes);
@@ -60,18 +70,6 @@ mongoose
   MONGODB_URI
   )
   .then(result => {
-    User.findOne().then(user => {
-      if (!user) {
-        const user = new User({
-          name: 'supran',
-          email: 'supran@email.com',
-          cart: {
-            items: []
-          }
-        });
-        user.save();
-      }
-    });
     app.listen(3000);
   })
   .catch(err => {

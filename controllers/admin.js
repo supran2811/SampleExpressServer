@@ -5,7 +5,11 @@ exports.getAddProducts = (req, res, next) => {
     // path.join method allows us to build path which will work on both windows and linux.
     // __dirname is nodejs inbuild variable which points to the current os directory with route.
     // res.sendFile(path.join(rootDir , 'views' , 'add-product.html'));
-    res.render("admin/edit-product", { path: '/admin/add-product', pageTitle: "Add Product", editing: false , isLoggedIn: req.session.isLoggedIn});
+    res.render("admin/edit-product", {
+         path: '/admin/add-product', 
+         pageTitle: "Add Product", 
+         editing: false
+        });
 };
 
 exports.postAddProduct = async (req, res, next) => {
@@ -23,7 +27,10 @@ exports.postAddProduct = async (req, res, next) => {
 exports.getAllProducts = async (req, res) => {
     try {
         const products = await Product.find();
-        res.render("admin/products", { prods: products, pageTitle: "Admin Products", path: '/admin/products', isLoggedIn: req.session.isLoggedIn });
+        res.render("admin/products", { 
+            prods: products, 
+            pageTitle: "Admin Products", 
+            path: '/admin/products'});
     } catch (error) {
         pino.error(error);
     }
@@ -36,7 +43,11 @@ exports.getUpdateProduct = async (req, res) => {
     const { edit } = req.query;
     try {
         const product = await Product.findById(id);
-        res.render("admin/edit-product", { product, path: "/admin/products", pageTitle: product.title, editing: edit, isLoggedIn: req.session.isLoggedIn });
+        res.render("admin/edit-product", { 
+            product, 
+            path: "/admin/products", 
+            pageTitle: product.title, 
+            editing: edit });
     } catch (error) {
         pino.error(error);
     }
