@@ -59,6 +59,9 @@ exports.postUpdateProduct = async (req, res) => {
 
     try {
         const product = await Product.findById(id);
+        if(product.userId.toString() !== req.user._id.toString()) {
+            return res.redirect('/');
+        }
         product.title = title;
         product.imageUrl = imageUrl;
         product.description = description;
@@ -73,7 +76,7 @@ exports.postUpdateProduct = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
     const { id, price } = req.body;
     try {
-        await Product.findByIdAndDelete(id);
+        await Product.deleteOne({_id:id , userId:req.user._id});
         res.redirect("/admin/products");
 
     } catch (err) {

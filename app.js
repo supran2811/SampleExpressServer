@@ -38,6 +38,8 @@ app.use(csrf());
 app.use(flash());
 
 app.use((req, res, next) => {
+  res.locals.isLoggedIn = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
   if (req.session.user) {
     User.findById(req.session.user._id)
       .then(user => {
@@ -51,12 +53,6 @@ app.use((req, res, next) => {
   }
 
 });
-
-app.use((req,res,next) => {
-  res.locals.isLoggedIn = req.session.isLoggedIn;
-  res.locals.csrfToken = req.csrfToken();
-  next();
-})
 
 app.use('/admin', adminRoutes);
 app.use(indexRoutes);

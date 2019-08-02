@@ -1,9 +1,21 @@
 const bcrypt = require('bcrypt');
+const { validationResult } = require('express-validator/check');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+const sendGridTransport = require('nodemailer-sendgrid-transport');
+
 const pino = require('../utils/logger');
 const User = require('../models/user');
+
+const transport = nodemailer.createTransport(sendGridTransport({
+  auth: {
+    api_key: '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'
+  }
+}));
+
 exports.getLogin = (req, res, next) => {
   let msg = req.flash('error');
-  if(msg.length > 0) {
+  if (msg.length > 0) {
     msg = msg[0];
   }
   else {
@@ -12,14 +24,35 @@ exports.getLogin = (req, res, next) => {
   res.render('auth/login', {
     path: '/login',
     pageTitle: 'Login',
-    errorMessage : msg
+    errorMessage: msg,
+    validationErrors : [],
+    oldInput:{
+      email:'',
+      password:''
+    }
+  });
+};
+
+
+exports.getReset = (req, res, next) => {
+  let msg = req.flash('error');
+  if (msg.length > 0) {
+    msg = msg[0];
+  }
+  else {
+    msg = null;
+  }
+  res.render('auth/reset', {
+    path: '/reset',
+    pageTitle: 'Reset Password',
+    errorMessage: msg
   });
 };
 
 
 exports.getSignup = (req, res, next) => {
   let msg = req.flash('error');
-  if(msg.length > 0) {
+  if (msg.length > 0) {
     msg = msg[0];
   }
   else {
@@ -28,12 +61,57 @@ exports.getSignup = (req, res, next) => {
   res.render('auth/signup', {
     path: '/signup',
     pageTitle: 'Signup',
-    errorMessage : msg
+    errorMessage: msg,
+    oldInput: {
+      email:'',
+      password: '',
+      confirmPassword : ''
+    },
+    validationErrors : []
   });
 };
 
+exports.getNewPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiration: { $gt: Date.now() }
+    });
+    if (user) {
+      res.render('auth/new-password', {
+        path: '/new-password',
+        pageTitle: 'Update Password',
+        userid: user._id.toString(),
+        errorMessage:''
+      });
+    }
+    else {
+      req.flash('error' , 'Token has expired or User does not exist anymore!!');
+      res.redirect('/reset');
+    }
+  } catch (error) {
+    pino.error(error);
+  }
+}
+
 exports.postLogin = async (req, res) => {
   const { email, password } = req.body;
+  const errors = validationResult(req);
+  if(!errors.isEmpty()) {
+    const errorMessage = errors.array()[0].msg;
+    return  res.status(422).render('auth/login', {
+    path: '/login',
+    pageTitle: 'Login',
+    errorMessage,
+    oldInput:{
+      email,
+      password
+    },
+    validationErrors : errors.array()
+  });
+  }
+  
   try {
     const user = await User.findOne({ email });
     if (user) {
@@ -51,12 +129,12 @@ exports.postLogin = async (req, res) => {
         })
       }
       else {
-        req.flash('error','Invalid id or password');
+        req.flash('error', 'Invalid id or password');
         res.redirect('/login');
       }
     }
     else {
-      req.flash('error','Invalid id or password');
+      req.flash('error', 'Invalid id or password');
       res.redirect('/login');
     }
 
@@ -68,13 +146,23 @@ exports.postLogin = async (req, res) => {
 
 exports.postSignup = async (req, res) => {
   const { email, password, confirmPassword } = req.body;
+  const errors = validationResult(req);
+  console.log("Validation Errors" , errors);
+   if(!errors.isEmpty()) {
+     const errorMessage = errors.array()[0].msg;
+     return  res.status(422).render('auth/signup', {
+    path: '/signup',
+    pageTitle: 'Signup',
+    errorMessage,
+    oldInput:{
+      email,
+      password,
+      confirmPassword
+    },
+    validationErrors : errors.array()
+  });
+   }
   try {
-    let user = await User.findOne({ email });
-    if (user) {
-      req.flash('error','User already exist!');
-      res.redirect('/signup');
-    }
-    else {
       const hashedPassword = await bcrypt.hash(password, 12);
       user = new User({
         email,
@@ -84,12 +172,66 @@ exports.postSignup = async (req, res) => {
         }
       });
       await user.save();
+      transport.sendMail({
+        to: user.email,
+        from: 'supran@sampleserver.com',
+        subject: 'Signup suceeded',
+        html: '<h1> You are signed up!! </h1>'
+      })
       res.redirect('/login');
-    }
   } catch (err) {
     pino.error(err);
   }
 };
+
+exports.postReset = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      req.flash('error', 'User does not exist');
+      return res.redirect('/reset');
+    }
+    const buff = await crypto.randomBytes(32);
+    const token = buff.toString('hex');
+    user.resetToken = token;
+    user.resetTokenExpiration = Date.now() + (3600 * 1000);
+    await user.save();
+    transport.sendMail({
+      to: user.email,
+      from: 'supran@sampleserver.com',
+      subject: 'Reset Password',
+      html: `
+          <p> Sending you the reset password link! </p>
+          <p> Click <a href='http://localhost:3000/reset/${token}'>here</a> to reset.
+        `
+    });
+    return res.redirect('/reset');
+  } catch (err) {
+    pino.error(err);
+  }
+}
+
+exports.updatePassword = async (req,res) => {
+  try { 
+    const { password , userid} = req.body;
+    const user = await User.findOne({
+      _id: userid
+    });
+    if(user) {
+      const hashedPassword = await bcrypt.hash(password, 12);
+      user.password = hashedPassword;
+      await user.save();
+      res.redirect('/login');
+    }
+    else {
+      req.flash('error','User does not exist anymore!!')
+      res.redirect('/signup');
+    }
+  } catch(error) {
+    pino.error(error);
+  }
+}
 
 exports.postLogout = async (req, res) => {
   req.session.destroy((err) => {
