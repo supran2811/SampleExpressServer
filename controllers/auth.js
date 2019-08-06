@@ -4,7 +4,6 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const sendGridTransport = require('nodemailer-sendgrid-transport');
 
-const pino = require('../utils/logger');
 const User = require('../models/user');
 
 const transport = nodemailer.createTransport(sendGridTransport({
@@ -71,7 +70,7 @@ exports.getSignup = (req, res, next) => {
   });
 };
 
-exports.getNewPassword = async (req, res) => {
+exports.getNewPassword = async (req, res , next) => {
   try {
     const { token } = req.params;
     const user = await User.findOne({
@@ -91,15 +90,16 @@ exports.getNewPassword = async (req, res) => {
       res.redirect('/reset');
     }
   } catch (error) {
-    pino.error(error);
+    next(error);
   }
 }
 
-exports.postLogin = async (req, res) => {
+exports.postLogin = async (req, res,next) => {
   const { email, password } = req.body;
   const errors = validationResult(req);
   if(!errors.isEmpty()) {
     const errorMessage = errors.array()[0].msg;
+    /// 422 is status code for validation fails.
     return  res.status(422).render('auth/login', {
     path: '/login',
     pageTitle: 'Login',
@@ -139,17 +139,17 @@ exports.postLogin = async (req, res) => {
     }
 
   } catch (error) {
-    pino.error(error);
-    res.redirect('/login');
+    next(error);
   }
 }
 
-exports.postSignup = async (req, res) => {
+exports.postSignup = async (req, res,next) => {
   const { email, password, confirmPassword } = req.body;
   const errors = validationResult(req);
   console.log("Validation Errors" , errors);
    if(!errors.isEmpty()) {
      const errorMessage = errors.array()[0].msg;
+     /// 422 is status code for validation fails.
      return  res.status(422).render('auth/signup', {
     path: '/signup',
     pageTitle: 'Signup',
@@ -180,11 +180,11 @@ exports.postSignup = async (req, res) => {
       })
       res.redirect('/login');
   } catch (err) {
-    pino.error(err);
+    next(err);
   }
 };
 
-exports.postReset = async (req, res) => {
+exports.postReset = async (req, res,next) => {
   const { email } = req.body;
   try {
     const user = await User.findOne({ email });
@@ -208,11 +208,11 @@ exports.postReset = async (req, res) => {
     });
     return res.redirect('/reset');
   } catch (err) {
-    pino.error(err);
+    next(err);
   }
 }
 
-exports.updatePassword = async (req,res) => {
+exports.updatePassword = async (req,res,next) => {
   try { 
     const { password , userid} = req.body;
     const user = await User.findOne({
@@ -229,14 +229,14 @@ exports.updatePassword = async (req,res) => {
       res.redirect('/signup');
     }
   } catch(error) {
-    pino.error(error);
+    next(error);
   }
 }
 
-exports.postLogout = async (req, res) => {
+exports.postLogout = async (req, res,next) => {
   req.session.destroy((err) => {
     if (err) {
-      pino.error(err);
+      return next(err);
     }
     res.redirect("/");
   });

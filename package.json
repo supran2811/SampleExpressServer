@@ -8,7 +8,7 @@
     "start": "nodemon app.js",
     "start-server": "node app.js"
   },
-  "author": "Maximilian Schwarzmüller",
+  "author": "Supran Sengupta",
   "license": "ISC",
   "devDependencies": {
     "nodemon": "^1.18.3"
@@ -27,12 +27,15 @@
     "express-validator": "^6.1.1",
     "mongodb": "^3.2.7",
     "mongoose": "^5.6.6",
+    "multer": "^1.4.2",
     "nodemailer": "^6.3.0",
     "nodemailer-sendgrid-transport": "^0.2.0",
+    "pdfkit": "^0.10.0",
     "pg": "^7.11.0",
     "pg-hstore": "^2.3.3",
     "pino": "^5.12.6",
     "pug": "^2.0.4",
-    "sequelize": "^5.10.0"
+    "sequelize": "^5.10.0",
+    "uniqid": "^5.0.3"
   }
 }

@@ -4,3 +4,9 @@ exports.getInvalidPage = (req,res) => {
         pageTitle : 'Invalid URL' ,
         path:'/invalid'});
 };
+
+exports.getErrorPage = ( req , res ) => {
+    res.status(500).render("500" , {
+        pageTitle : 'Error Occured' ,
+        path:'/error'});
+}

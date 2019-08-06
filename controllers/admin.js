@@ -1,7 +1,6 @@
 const { validationResult } = require('express-validator');
-
 const Product = require('../models/product');
-const pino = require('../utils/logger');
+const fileHelper = require('../utils/file');
 
 exports.getAddProducts = (req, res, next) => {
     // path.join method allows us to build path which will work on both windows and linux.
@@ -19,10 +18,13 @@ exports.getAddProducts = (req, res, next) => {
 };
 
 exports.postAddProduct = async (req, res, next) => {
-    const { title, imageUrl, description, price } = req.body;
+    const { title, description, price } = req.body;
+    const image = req.file;
+    console.log("File ====>", image);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        const errorMessage = errors.array()[0].msg; 
+        const errorMessage = errors.array()[0].msg;
+        /// 422 is status code for validation fails.
         return res.status(422).render("admin/edit-product", {
             path: '/admin/add-product',
             pageTitle: "Add Product",
@@ -31,23 +33,38 @@ exports.postAddProduct = async (req, res, next) => {
             validationErrors: errors.array(),
             oldInput: {
                 title,
-                imageUrl,
-                price : +price,
+                price: +price,
                 description
             }
 
         })
     }
-    const product = new Product({ title, imageUrl, price, description, userId: req.user });
+    else if (!image) {
+        return res.status(422).render("admin/edit-product", {
+            path: '/admin/add-product',
+            pageTitle: "Add Product",
+            editing: false,
+            errorMessage: 'Please attach a valid image file',
+            validationErrors: [],
+            oldInput: {
+                title,
+                price: +price,
+                description
+            }
+
+        })
+    }
     try {
+        const imageUrl = '/' + image.path;
+        const product = new Product({ title, imageUrl, price, description, userId: req.user });
         await product.save();
         res.redirect("/admin/products");
     } catch (error) {
-        pino.error(error);
+        next(error);
     }
 }
 
-exports.getAllProducts = async (req, res) => {
+exports.getAllProducts = async (req, res, next) => {
     try {
         const products = await Product.find();
         res.render("admin/products", {
@@ -56,11 +73,11 @@ exports.getAllProducts = async (req, res) => {
             path: '/admin/products'
         });
     } catch (error) {
-        pino.error(error);
+        next(error);
     }
 };
 
-exports.getUpdateProduct = async (req, res) => {
+exports.getUpdateProduct = async (req, res, next) => {
 
 
     const id = req.params.prodId;
@@ -72,20 +89,21 @@ exports.getUpdateProduct = async (req, res) => {
             path: "/admin/products",
             pageTitle: product.title,
             editing: edit,
-            errorMessage:'',
-            oldInput : { },
+            errorMessage: '',
+            oldInput: {},
             validationErrors: []
         });
     } catch (error) {
-        pino.error(error);
+        next(error);
     }
 }
 
-exports.postUpdateProduct = async (req, res) => {
-    const { title, imageUrl, description, price } = req.body;
+exports.postUpdateProduct = async (req, res, next) => {
+    const { title, description, price } = req.body;
+    const image = req.file;
     const id = req.params.prodId;
     const errors = validationResult(req);
-    
+
     try {
         const product = await Product.findById(id);
         if (product.userId.toString() !== req.user._id.toString()) {
@@ -93,7 +111,8 @@ exports.postUpdateProduct = async (req, res) => {
         }
 
         if (!errors.isEmpty()) {
-            const errorMessage = errors.array()[0].msg; 
+            const errorMessage = errors.array()[0].msg;
+            /// 422 is status code for validation fails.
             return res.status(422).render("admin/edit-product", {
                 product,
                 path: "/admin/products",
@@ -103,31 +122,40 @@ exports.postUpdateProduct = async (req, res) => {
                 validationErrors: errors.array(),
                 oldInput: {
                     title,
-                    imageUrl,
-                    price : +price,
+                    price: +price,
                     description
                 }
-          })
+            })
         }
+
         product.title = title;
-        product.imageUrl = imageUrl;
+
+        if (image) {
+            fileHelper.deleteFile(product.imageUrl.substr(1));
+            product.imageUrl = '/' + image.path;
+        }
+
         product.description = description;
         product.price = price;
         await product.save();
         res.redirect('/admin/products');
     } catch (error) {
-        pino.error(error);
+        next(error);
     }
 }
 
 exports.deleteProduct = async (req, res) => {
     const { id, price } = req.body;
     try {
-        await Product.deleteOne({ _id: id, userId: req.user._id });
+        const product = await Product.findById(id);
+        if (product) {
+            fileHelper.deleteFile(product.imageUrl.substr(1));
+            await Product.deleteOne({ _id: id, userId: req.user._id });
+        }
         res.redirect("/admin/products");
 
     } catch (err) {
-        pino.error(err);
+        next(error);
     }
 
 

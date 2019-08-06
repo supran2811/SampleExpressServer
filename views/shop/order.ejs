@@ -9,6 +9,7 @@
                     <% for(const order of orders) { %>
                         <li>
                             <h1># <%= order._id %> </h1>
+                            <a href="/orders/<%= order._id%>">Invoice</a>
                             <ul>
                                 <% for(const item of order.items) { %>
                                     <li>

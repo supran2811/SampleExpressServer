@@ -22,7 +22,6 @@ router.post('/add-product',
         .trim()
         .isLength({ min: 4 })
         .withMessage("Enter a valid product name of mininum 4 letters"),
-    check('imageUrl').trim().isURL().withMessage('Enter valid image url'),
     check('price')
         .isFloat()
         .withMessage('Enter a valid number for  price'),
@@ -41,7 +40,6 @@ router.post('/update-product/:prodId', isAuth,
         .trim()
         .isLength({ min: 4 })
         .withMessage("Enter a valid product name of mininum 4 letters"),
-    check('imageUrl').trim().isURL().withMessage('Enter valid image url'),
     check('price')
         .isFloat()
         .withMessage('Enter a valid number for  price'),
