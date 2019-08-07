@@ -7,14 +7,25 @@ const Product = require('../models/product');
 const User = require('../models/user');
 const Order = require('../models/order');
 
+const ITEMS_PER_PAGE = 2;
+
 exports.getMainPage = async (req, res, next) => {
+    const { page = 1 } = req.query;
     try {
-        const products = await Product.find();
+        const totalItems = await Product.find().countDocuments();
+        const products = await Product.find().skip((page - 1)*ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE);
         res.render("shop/index", {
             prods: products,
             pageTitle: "Shop",
-            path: '/'
+            path: '/',
+            currentPage: +page,
+            hasNextPage: ((page*ITEMS_PER_PAGE) < totalItems),
+            hasPrevPage: +page > 1,
+            nextPage : +page + 1,
+            prevPage : +page - 1,
+            lastPage : Math.ceil(totalItems/ITEMS_PER_PAGE)
         });
+        
     } catch (error) {
         ////Throwing a error here wont work since its asynchronous code
         /// So we need to call next with error.
@@ -22,13 +33,22 @@ exports.getMainPage = async (req, res, next) => {
     }
 }
 
-exports.getAllProducts = async (req, res) => {
+exports.getAllProducts = async (req, res , next) => {
     try {
-        const products = await Product.find();
+        const { page = 1 } = req.query;
+        const totalItems = await Product.find().countDocuments();
+        const products = await Product.find().skip((page - 1)*ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE);
+        
         res.render("shop/product-list", {
             prods: products,
             pageTitle: "Shop",
-            path: '/products'
+            path: '/products',
+            currentPage: +page,
+            hasNextPage: ((page*ITEMS_PER_PAGE) < totalItems),
+            hasPrevPage: +page > 1,
+            nextPage : +page + 1,
+            prevPage : +page - 1,
+            lastPage : Math.ceil(totalItems/ITEMS_PER_PAGE)
         });
     } catch (error) {
         ////Throwing a error here wont work since its asynchronous code

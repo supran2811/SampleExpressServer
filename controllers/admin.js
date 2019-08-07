@@ -66,7 +66,7 @@ exports.postAddProduct = async (req, res, next) => {
 
 exports.getAllProducts = async (req, res, next) => {
     try {
-        const products = await Product.find();
+        const products = await Product.find({userId:req.user._id});
         res.render("admin/products", {
             prods: products,
             pageTitle: "Admin Products",
@@ -145,17 +145,18 @@ exports.postUpdateProduct = async (req, res, next) => {
 }
 
 exports.deleteProduct = async (req, res) => {
-    const { id, price } = req.body;
+    const { prodId } = req.params;
     try {
-        const product = await Product.findById(id);
+        const product = await Product.findById(prodId);
         if (product) {
             fileHelper.deleteFile(product.imageUrl.substr(1));
-            await Product.deleteOne({ _id: id, userId: req.user._id });
+            await Product.deleteOne({ _id: prodId, userId: req.user._id });
         }
-        res.redirect("/admin/products");
+        res.status(200).json({message:'Sucess!'});
+        // res.redirect("/admin/products");
 
     } catch (err) {
-        next(error);
+        res.status(500).json({message:'Error!'});
     }
 
 

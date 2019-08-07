@@ -49,5 +49,5 @@ router.post('/update-product/:prodId', isAuth,
         .withMessage("Enter a valid description of mininum 10 letters")]
     , adminController.postUpdateProduct);
 
-router.post('/delete-product', isAuth, adminController.deleteProduct);
+router.delete('/product/:prodId', isAuth, adminController.deleteProduct);
 module.exports = router;
