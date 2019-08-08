@@ -15,6 +15,10 @@ const uniqid = require('uniqid');
 
 const pino = require('./utils/logger');
 const errorController = require('./controllers/error');
+
+const shopController = require('./controllers/shop');
+
+const isAuth = require('./middleware/is-auth');
 const User = require('./models/user');
 
 const app = express();
@@ -56,12 +60,11 @@ const store = new MongoDbStore({
 });
 
 app.use(session({ secret: 'My secret key', resave: false, saveUninitialized: false, store }));
-app.use(csrf());
+
 app.use(flash());
 
 app.use(async (req, res, next) => {
   res.locals.isLoggedIn = req.session.isLoggedIn;
-  res.locals.csrfToken = req.csrfToken();
   try {
     if (req.session.user) {
       const user = await User.findById(req.session.user._id);
@@ -79,6 +82,16 @@ app.use(async (req, res, next) => {
   
 });
 
+/// In order to avoid csrf token check for this route we 
+/// need to handle this route before csrf token is used
+app.post('/create-order' , isAuth,shopController.doCreateOrder);
+
+app.use(csrf());
+
+app.use( (req,res,next) => {
+  res.locals.csrfToken = req.csrfToken();
+  next();
+})
 app.use('/admin', adminRoutes);
 app.use(indexRoutes);
 app.use(shopRoutes);

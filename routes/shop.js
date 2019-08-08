@@ -14,11 +14,11 @@ router.get('/cart' , isAuth,shopController.getCartPage);
 
 router.post('/cart' , isAuth,shopController.postCart);
 
+router.get('/checkout', isAuth , shopController.getCheckout);
+
 router.get('/orders' ,isAuth, shopController.getOrderPage);
 
 router.post('/delete-from-cart', isAuth,shopController.deleteFromCart);
-
-router.post('/checkout' , isAuth,shopController.doCheckout);
 
 router.get('/orders/:orderId' , isAuth , shopController.getInvoice);
 

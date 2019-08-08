@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
+const stripe = require('stripe')('sk_test_kYCCryd0LcyMNv3blFN7cApS00XN5EbNSu');
 
 const Product = require('../models/product');
 const User = require('../models/user');
@@ -13,19 +14,19 @@ exports.getMainPage = async (req, res, next) => {
     const { page = 1 } = req.query;
     try {
         const totalItems = await Product.find().countDocuments();
-        const products = await Product.find().skip((page - 1)*ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE);
+        const products = await Product.find().skip((page - 1) * ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE);
         res.render("shop/index", {
             prods: products,
             pageTitle: "Shop",
             path: '/',
             currentPage: +page,
-            hasNextPage: ((page*ITEMS_PER_PAGE) < totalItems),
+            hasNextPage: ((page * ITEMS_PER_PAGE) < totalItems),
             hasPrevPage: +page > 1,
-            nextPage : +page + 1,
-            prevPage : +page - 1,
-            lastPage : Math.ceil(totalItems/ITEMS_PER_PAGE)
+            nextPage: +page + 1,
+            prevPage: +page - 1,
+            lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE)
         });
-        
+
     } catch (error) {
         ////Throwing a error here wont work since its asynchronous code
         /// So we need to call next with error.
@@ -33,22 +34,22 @@ exports.getMainPage = async (req, res, next) => {
     }
 }
 
-exports.getAllProducts = async (req, res , next) => {
+exports.getAllProducts = async (req, res, next) => {
     try {
         const { page = 1 } = req.query;
         const totalItems = await Product.find().countDocuments();
-        const products = await Product.find().skip((page - 1)*ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE);
-        
+        const products = await Product.find().skip((page - 1) * ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE);
+
         res.render("shop/product-list", {
             prods: products,
             pageTitle: "Shop",
             path: '/products',
             currentPage: +page,
-            hasNextPage: ((page*ITEMS_PER_PAGE) < totalItems),
+            hasNextPage: ((page * ITEMS_PER_PAGE) < totalItems),
             hasPrevPage: +page > 1,
-            nextPage : +page + 1,
-            prevPage : +page - 1,
-            lastPage : Math.ceil(totalItems/ITEMS_PER_PAGE)
+            nextPage: +page + 1,
+            prevPage: +page - 1,
+            lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE)
         });
     } catch (error) {
         ////Throwing a error here wont work since its asynchronous code
@@ -75,7 +76,7 @@ exports.getProductPage = async (req, res) => {
 
 }
 
-exports.getCartPage = async (req, res) => {
+exports.getCartPage = async (req, res, next) => {
     try {
         const user = await req.user.populate('cart.items.prodId').execPopulate();
         const cartProducts = user.cart.items;
@@ -84,6 +85,28 @@ exports.getCartPage = async (req, res) => {
                 pageTitle: "Cart",
                 path: "/cart",
                 products: cartProducts
+            });
+        }
+    } catch (error) {
+        ////Throwing a error here wont work since its asynchronous code
+        /// So we need to call next with error.
+        next(error);
+    }
+}
+
+exports.getCheckout = async (req, res, next) => {
+    try {
+        const user = await req.user.populate('cart.items.prodId').execPopulate();
+        const cartProducts = user.cart.items;
+        const totalPrice = cartProducts.reduce((accumulator, item) => {
+            return accumulator + (item.qty * item.prodId.price)
+        }, 0);
+        if (cartProducts) {
+            res.render("shop/checkout", {
+                pageTitle: "Checkout",
+                path: "/checkout",
+                products: cartProducts,
+                totalPrice
             });
         }
     } catch (error) {
@@ -106,12 +129,16 @@ exports.postCart = async (req, res) => {
     }
 }
 
-exports.doCheckout = async (req, res) => {
+exports.doCreateOrder = async (req, res) => {
     try {
+        const token = req.body.stripeToken; 
         const user = await req.user.populate('cart.items.prodId').execPopulate();
         const items = user.cart.items.map(({ prodId, qty }) => {
             return { product: { ...prodId._doc }, qty }
-        })
+        });
+        const totalPrice = user.cart.items.reduce((accumulator, item) => {
+            return accumulator + (item.prodId.price * item.qty);
+        }, 0);
         const order = new Order({
             user: {
                 userId: req.user._id,
@@ -119,7 +146,15 @@ exports.doCheckout = async (req, res) => {
             },
             items
         })
-        await order.save();
+        const result = await order.save();
+        /** This is using stripe to start doing the payment */
+        const charge = stripe.charges.create({
+            amount: totalPrice * 100,
+            currency: 'usd',
+            description: 'Demo Order',
+            source: token,
+            metadata: { order_id: result._id.toString() }
+        });
         await req.user.clearCart();
         res.redirect('/orders');
         // Redirect to the order page

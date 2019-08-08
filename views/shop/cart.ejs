@@ -22,10 +22,11 @@
                             </li>
                             <% } %>
                     </ul>
-                    <form action="/checkout" method="POST" >
+                    <!-- <form action="/checkout" method="POST" >
                         <input type="hidden" name = "_csrf" value = "<%= csrfToken %>">
                         <button type="submit" class="btn">Checkout</button>
-                    </form>
+                    </form> -->
+                    <a class="btn" href="/checkout">Checkout</a>
 
                     <% } else { %>
                         <h1>No Product</h1>
