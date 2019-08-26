@@ -1,7 +1,9 @@
 const path = require('path');
+const fs = require('fs');
 
 /// This is for express server
 const express = require('express');
+const https = require('https');
 
 /// This is for parsing form body
 const bodyParser = require('body-parser');
@@ -12,6 +14,10 @@ const MongoDbStore = require("connect-mongodb-session")(session);
 const csrf = require('csurf');
 const flash = require('connect-flash');
 const uniqid = require('uniqid');
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
+
 
 const pino = require('./utils/logger');
 const errorController = require('./controllers/error');
@@ -31,7 +37,17 @@ const shopRoutes = require('./routes/shop');
 const indexRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
 
-const MONGODB_URI = 'mongodb+srv://supran:1234@supran-cluster0-zzni5.mongodb.net/shop?retryWrites=true&w=majority'
+const MONGODB_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@supran-cluster0-zzni5.mongodb.net/${process.env.MONGO_DBNAME}?retryWrites=true&w=majority`
+
+app.use(helmet());
+app.use(compression());
+
+// const privateKey = fs.readFileSync(path.join(__dirname , 'server.key'));
+// const serverCert = fs.readFileSync(path.join(__dirname , 'server.cert'));
+
+const accessStream = fs.createWriteStream(path.join(__dirname , "access.log") , {flags:'a'});
+
+app.use(morgan('combined' , { stream: accessStream}));
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -55,7 +71,7 @@ app.use('/images',express.static(path.join(__dirname, 'images')));
 
 const store = new MongoDbStore({
   uri: MONGODB_URI,
-  databaseName: 'shop',
+  databaseName: process.env.MONDO_DBNAME,
   collection: 'sessions'
 });
 
@@ -111,7 +127,9 @@ app.use((error, req, res, next) => {
 
 mongoose.connect(MONGODB_URI)
   .then(result => {
-    app.listen(3000);
+    // https.createServer( { key:privateKey , cert:serverCert } , app )
+    // .listen(process.env.PORT || 3000);
+    app.listen(process.env.PORT || 3000);
   })
   .catch(err => {
     pino.error(err);

@@ -1,0 +1,8 @@
+{
+    "env" : {
+        "MONGO_USER" : "supran",
+        "MONGO_PASSWORD" : "1234",
+        "MONGO_DBNAME" : "shop",
+        "STRPE_KEY" : "sk_test_kYCCryd0LcyMNv3blFN7cApS00XN5EbNSu"
+    }
+}
