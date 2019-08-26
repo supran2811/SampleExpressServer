@@ -17,8 +17,6 @@ const uniqid = require('uniqid');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
-
-
 const pino = require('./utils/logger');
 const errorController = require('./controllers/error');
 
