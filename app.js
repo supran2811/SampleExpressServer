@@ -3,7 +3,6 @@ const fs = require('fs');
 
 /// This is for express server
 const express = require('express');
-const https = require('https');
 
 /// This is for parsing form body
 const bodyParser = require('body-parser');
